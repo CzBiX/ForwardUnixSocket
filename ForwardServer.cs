@@ -12,18 +12,18 @@ namespace ForwardUnixSocket
 {
     class ForwardServer
     {
-        private static Regex pattern = new Regex(@"(?<=>)\d+(?=\s)");
-        private TcpListener listener;
+        private static readonly Regex pattern = new Regex(@"(?<=>)\d+(?=\s)");
+        private readonly TcpListener listener;
 
         public int upstreamPort;
 
-        public ForwardServer(IPAddress ip, string socketPath)
+        public ForwardServer(string socketPath)
         {
-            upstreamPort = GetKeeAgentPort(socketPath);
-            listener = new TcpListener(ip, upstreamPort);
+            upstreamPort = GetUnixSocketPort(socketPath);
+            listener = new TcpListener(IPAddress.Any, upstreamPort);
         }
 
-        private static int GetKeeAgentPort(string socketPath)
+        private static int GetUnixSocketPort(string socketPath)
         {
             string lines = File.ReadAllText(socketPath);
             var m = pattern.Match(lines);
@@ -34,7 +34,7 @@ namespace ForwardUnixSocket
         public void Run()
         {
             listener.Start();
-            Console.WriteLine("Listening on {0}", upstreamPort.ToString());
+            Console.WriteLine("Listening on {0}", listener.LocalEndpoint);
 
             while (true)
             {
@@ -45,7 +45,8 @@ namespace ForwardUnixSocket
 
         private async void HandleConnection(TcpClient client)
         {
-            Console.WriteLine("Downstream connected");
+            var clientEndPoint = client.Client.RemoteEndPoint;
+            Console.WriteLine("Downstream connected: {0}", clientEndPoint);
 
             var localClient = new TcpClient();
 
@@ -75,18 +76,17 @@ namespace ForwardUnixSocket
             byte[] buf = new byte[4096];
             int count;
 
-            while (true)
+            try
             {
-                try
+                while (true)
                 {
                     count = await source.ReadAsync(buf, 0, buf.Length);
                     await dest.WriteAsync(buf, 0, count);
                 }
-                catch (Exception)
-                {
-                    //Console.WriteLine("Connect exception: {0}", e.Message);
-                    break;
-                }
+            }
+            catch (Exception)
+            {
+                //Console.WriteLine("Connect exception: {0}", e.Message);
             }
 
             dest.Close();

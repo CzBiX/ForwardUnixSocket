@@ -18,10 +18,9 @@ namespace ForwardUnixSocket
                 return;
             }
 
-            var ip = GetWslIp();
-            Console.WriteLine("WSL IP: {0}", ip);
+            Console.WriteLine("WSL IP: {0}", GetWslIp());
 
-            var server = new ForwardServer(ip, args[0]);
+            var server = new ForwardServer(args[0]);
             server.Run();
         }
 
