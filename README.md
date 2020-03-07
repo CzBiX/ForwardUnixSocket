@@ -12,7 +12,7 @@ See [blog post](https://blog.czbix.com/WSL2-KeeAgent.html) for more infomation.
 
 ## Basic usage
 ```
-ForwardUnixSocket.exe ForwardUnixSocket.exe C:\path\to\socket\file.sock
+ForwardUnixSocket.exe C:\path\to\socket\file.sock
 ```
 
 You have to check "Public networks", otherwise WSL 2 can't pass firewall.
