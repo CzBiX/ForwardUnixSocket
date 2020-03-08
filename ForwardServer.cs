@@ -3,6 +3,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Net;
@@ -48,48 +49,52 @@ namespace ForwardUnixSocket
             var clientEndPoint = client.Client.RemoteEndPoint;
             Console.WriteLine("Downstream connected: {0}", clientEndPoint);
 
-            var localClient = new TcpClient();
-
-            try
+            using (client)
             {
-                await localClient.ConnectAsync("localhost", upstreamPort);
+                using (var localClient = new TcpClient())
+                {
+                    try
+                    {
+                        await localClient.ConnectAsync(IPAddress.Loopback, upstreamPort);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("Connect to upstream failed: {0}", e.Message);
+                        return;
+                    }
+
+                    Debug.Print("Upstream connected");
+
+                    var upstream = localClient.GetStream();
+                    var downstream = client.GetStream();
+
+                    await Task.WhenAll(CopyStream(upstream, downstream), CopyStream(downstream, upstream));
+
+                }
             }
-            catch (Exception e)
-            {
-                Console.WriteLine("Connect to upstream failed: {0}", e.Message);
-                localClient.Close();
-                return;
-            }
-
-            Console.WriteLine("Upstream connected");
-
-            var upstream = localClient.GetStream();
-            var downstream = client.GetStream();
-
-            await Task.WhenAll(CopyStream(upstream, downstream), CopyStream(downstream, upstream));
 
             Console.WriteLine("Closed");
         }
 
         private async Task CopyStream(NetworkStream source, NetworkStream dest)
         {
-            byte[] buf = new byte[4096];
-            int count;
-
             try
             {
-                while (true)
-                {
-                    count = await source.ReadAsync(buf, 0, buf.Length);
-                    await dest.WriteAsync(buf, 0, count);
-                }
+                await source.CopyToAsync(dest);
             }
-            catch (Exception)
+            catch (ObjectDisposedException)
             {
-                //Console.WriteLine("Connect exception: {0}", e.Message);
+                Debug.Print("Local close");
             }
-
-            dest.Close();
+            catch (Exception e)
+            {
+                Console.WriteLine("Connection exception: {0}", e.Message);
+            }
+            finally
+            {
+                dest.Close();
+                Debug.Print("Connect close");
+            }
         }
     }
 }
