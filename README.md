@@ -15,4 +15,4 @@ See [blog post](https://blog.czbix.com/WSL2-KeeAgent.html) for more infomation.
 ForwardUnixSocket.exe C:\path\to\socket\file.sock
 ```
 
-You have to check "Public networks", otherwise WSL 2 can't pass firewall.
+You have to check "Public networks" on the dialog of Windows Firewall, otherwise WSL 2 can't pass firewall.
