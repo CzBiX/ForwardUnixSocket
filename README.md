@@ -1,5 +1,11 @@
 # ForwardUnixSocket
 
+**Abandoned**
+
+Please use https://github.com/buptczq/WinCryptSSHAgent, which is more powerful.
+
+---
+
 This small tool is intended to help use Cygwin/msysgit sockets with the Windows Linux Subsystem.
 
 It was specifically designed to pass SSH keys from the KeeAgent module of KeePass secret management application to the
